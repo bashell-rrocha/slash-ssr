@@ -12,7 +12,6 @@ type AppState = {
   todos: Todo[];
   name: string;
   primary: boolean;
-  btnClasses: string[];
 };
 
 const state = createState<AppState>({
@@ -23,18 +22,32 @@ const state = createState<AppState>({
   ],
   name: "",
   primary: true,
-  btnClasses: [styles.button, styles.primary],
 });
 
 let nextId = 4;
 
-// sincroniza quando o "primary" muda
-state.watch((s) => {
-  const btnClasses = [styles.button, s.primary ? styles.primary : styles.secondary];
-  if (JSON.stringify(s.btnClasses) !== JSON.stringify(btnClasses)) {
-    state.set({ ...s, btnClasses });
-  }
-});
+// Deriva um Reactive de uma parte do estado (o mesmo padrão do Tasks.tsx do slash-spa).
+// Ler `state.get()` direto no template congela o valor na hora da montagem.
+function select<T>(pick: (s: AppState) => T) {
+  return {
+    get: () => pick(state.get()),
+    subscribe: (fn: (value: T) => void) => state.watch((s) => fn(pick(s))),
+  };
+}
+
+const name = select((s) => s.name);
+// A classe do botão deriva de `primary` (evita um watcher que faz state.set dentro da notificação)
+const btnClasses = select((s) => [styles.button, s.primary ? styles.primary : styles.secondary]);
+const todoItems = select((s) =>
+  s.todos.map(
+    (t: Todo) => html`
+      <li class=${styles.todo}>
+        <span>${t.text}</span>
+        <button class=${styles.rm} onClick=${() => remove(t.id)}>x</button>
+      </li>
+    `,
+  ),
+);
 
 function add() {
   const text = state.get().name.trim();
@@ -56,7 +69,7 @@ export function App() {
         <label>
           name:
           <input
-            value=${state.get().name}
+            value=${name}
             onInput=${(e: Event) => {
               const prev = state.get();
               state.set({ ...prev, name: (e.target as HTMLInputElement).value });
@@ -71,7 +84,7 @@ export function App() {
       </div>
 
       <div class=${styles.row}>
-        <button class=${state.get().btnClasses} onClick=${() => {
+        <button class=${btnClasses} onClick=${() => {
           const prev = state.get();
           state.set({ ...prev, primary: !prev.primary });
         }}>
@@ -80,12 +93,7 @@ export function App() {
       </div>
 
       <ul class=${styles.row}>
-        ${state.get().todos.map((t: Todo) => html`
-          <li class=${styles.todo}>
-            <span>${t.text}</span>
-            <button class=${styles.rm} onClick=${() => remove(t.id)}>x</button>
-          </li>
-        `)}
+        ${todoItems}
       </ul>
     </section>
   `;

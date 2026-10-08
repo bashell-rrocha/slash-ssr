@@ -1,6 +1,7 @@
 // packages/slash-ssr/src/server.ts
 import { renderToString } from "@_bashell/slash/ssr";
 import { App } from "./app";
+import { renderStateScript } from "./state-script";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -9,7 +10,8 @@ const PUBLIC_DIR = new URL("../public/", import.meta.url);
 
 // Ler o template HTML
 async function getHtmlTemplate(): Promise<string> {
-  const templatePath = resolve(import.meta.dir, "../public/index.html");
+  // dist/index.html: em produção já referencia os assets com hash (ver scripts/build.ts)
+  const templatePath = resolve(import.meta.dir, "../dist/index.html");
   return await readFile(templatePath, "utf-8");
 }
 
@@ -40,20 +42,16 @@ async function serveIndex(): Promise<Response> {
     const manifest = JSON.parse(await readFile(manifestPath, "utf-8"));
     html = injectCss(html, manifest.css || []);
   } catch {
-    // Em produção ou se não houver manifest, tentar injetar client.css diretamente
-    html = injectCss(html, ["client.css"]);
+    // Em produção não há manifest: o build já injetou os <link> no dist/index.html
   }
 
   // Substituir o placeholder pelo HTML renderizado
-  html = html.replace('<div id="app">carregando…</div>', `<div id="app">${appHtml}</div>`);
+  html = html.replace('<div id="app">carregando…</div>', () => `<div id="app">${appHtml}</div>`);
 
   // Injetar o estado serializado
-  const stateScript = `
-    <script id="__SLASH_STATE__" type="application/json">
-      ${JSON.stringify(state)}
-    </script>`;
+  const stateScript = renderStateScript(state);
 
-  html = html.replace("</body>", `  ${stateScript}\n  </body>`);
+  html = html.replace("</body>", () => `  ${stateScript}\n  </body>`);
 
   return new Response(html, {
     headers: { "Content-Type": "text/html; charset=utf-8" },

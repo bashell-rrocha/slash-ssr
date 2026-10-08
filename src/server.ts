@@ -1,6 +1,7 @@
 // packages/slash-ssr/src/server.ts
 import { renderToString } from "@_bashell/slash/ssr";
 import { App } from "./app";
+import { renderStateScript } from "./state-script";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -45,15 +46,12 @@ async function serveIndex(): Promise<Response> {
   }
 
   // Substituir o placeholder pelo HTML renderizado
-  html = html.replace('<div id="app">carregando…</div>', `<div id="app">${appHtml}</div>`);
+  html = html.replace('<div id="app">carregando…</div>', () => `<div id="app">${appHtml}</div>`);
 
   // Injetar o estado serializado
-  const stateScript = `
-    <script id="__SLASH_STATE__" type="application/json">
-      ${JSON.stringify(state)}
-    </script>`;
+  const stateScript = renderStateScript(state);
 
-  html = html.replace("</body>", `  ${stateScript}\n  </body>`);
+  html = html.replace("</body>", () => `  ${stateScript}\n  </body>`);
 
   return new Response(html, {
     headers: { "Content-Type": "text/html; charset=utf-8" },

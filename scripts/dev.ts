@@ -39,6 +39,8 @@ const clientConfig = {
   },
   packages: "bundle",
   // Não usar external - bundlar tudo incluindo slash
+  // Resolve o core pelo código-fonte (condição "bun" do package.json), não pelo dist
+  conditions: ["bun"],
   plugins: [resolveSlashSourcePlugin, cssModuleTypesPlugin({ verbose: true })],
   define: {
     "process.env.NODE_ENV": JSON.stringify("development"),
@@ -55,6 +57,8 @@ const serverConfig = {
   minify: false,
   packages: "bundle",
   // Não usar external - bundlar tudo incluindo slash
+  // Resolve o core pelo código-fonte (condição "bun" do package.json), não pelo dist
+  conditions: ["bun"],
   plugins: [resolveSlashSourcePlugin, cssModuleTypesPlugin({ verbose: false })],
   define: {
     "process.env.NODE_ENV": JSON.stringify("development"),

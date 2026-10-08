@@ -3,7 +3,7 @@ import { html as clientHtml, createState } from "@_bashell/slash/core";
 import { htmlString } from "@_bashell/slash/ssr";
 import styles from "./styles.module.css";
 
-// No servidor usa htmlString (retorna string), no cliente usa html (retorna Nodes)
+// No servidor usa htmlString (retorna SafeHtml; texto interpolado é escapado), no cliente usa html (retorna Nodes)
 const html = typeof document !== "undefined" ? clientHtml : htmlString;
 
 type Todo = { id: number; text: string };
@@ -12,7 +12,6 @@ type AppState = {
   todos: Todo[];
   name: string;
   primary: boolean;
-  btnClasses: string[];
 };
 
 const state = createState<AppState>({
@@ -23,18 +22,45 @@ const state = createState<AppState>({
   ],
   name: "",
   primary: true,
-  btnClasses: [styles.button, styles.primary],
 });
 
 let nextId = 4;
 
-// sincroniza quando o "primary" muda
-state.watch((s) => {
-  const btnClasses = [styles.button, s.primary ? styles.primary : styles.secondary];
-  if (JSON.stringify(s.btnClasses) !== JSON.stringify(btnClasses)) {
-    state.set({ ...s, btnClasses });
-  }
-});
+// Deriva um Reactive de uma parte do estado (o mesmo padrão do Tasks.tsx do slash-spa).
+// Ler `state.get()` direto no template congela o valor na hora da montagem.
+// Só notifica quando o valor escolhido mudou (comparação por JSON, os dados são simples):
+// digitar no input não reconstrói a lista. `view` transforma o valor escolhido no que é renderizado.
+function select<P, T = P>(pick: (s: AppState) => P, view: (value: P) => T = (v) => v as unknown as T) {
+  return {
+    get: () => view(pick(state.get())),
+    subscribe: (fn: (value: T) => void) => {
+      let prev = JSON.stringify(pick(state.get()));
+      return state.watch((s) => {
+        const value = pick(s);
+        const key = JSON.stringify(value);
+        if (key === prev) return;
+        prev = key;
+        fn(view(value));
+      });
+    },
+  };
+}
+
+const name = select((s) => s.name);
+// A classe do botão deriva de `primary` (evita um watcher que faz state.set dentro da notificação)
+const btnClasses = select((s) => [styles.button, s.primary ? styles.primary : styles.secondary]);
+const todoItems = select(
+  (s) => s.todos,
+  (todos) =>
+    todos.map(
+      (t: Todo) => html`
+        <li class=${styles.todo}>
+          <span>${t.text}</span>
+          <button class=${styles.rm} onClick=${() => remove(t.id)}>x</button>
+        </li>
+      `,
+    ),
+);
 
 function add() {
   const text = state.get().name.trim();
@@ -56,7 +82,7 @@ export function App() {
         <label>
           name:
           <input
-            value=${state.get().name}
+            value=${name}
             onInput=${(e: Event) => {
               const prev = state.get();
               state.set({ ...prev, name: (e.target as HTMLInputElement).value });
@@ -71,7 +97,7 @@ export function App() {
       </div>
 
       <div class=${styles.row}>
-        <button class=${state.get().btnClasses} onClick=${() => {
+        <button class=${btnClasses} onClick=${() => {
           const prev = state.get();
           state.set({ ...prev, primary: !prev.primary });
         }}>
@@ -80,12 +106,7 @@ export function App() {
       </div>
 
       <ul class=${styles.row}>
-        ${state.get().todos.map((t: Todo) => html`
-          <li class=${styles.todo}>
-            <span>${t.text}</span>
-            <button class=${styles.rm} onClick=${() => remove(t.id)}>x</button>
-          </li>
-        `)}
+        ${todoItems}
       </ul>
     </section>
   `;

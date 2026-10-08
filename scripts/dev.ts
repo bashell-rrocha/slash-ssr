@@ -3,21 +3,8 @@ import { cssModuleTypesPlugin } from "../plugins/css-types";
 import { watch as fsWatch } from "node:fs";
 import { stat, readdir, writeFile, cp, rm, mkdir } from "node:fs/promises";
 import { resolve, join, extname, basename } from "node:path";
-import type { BunPlugin } from "bun";
 
 type BuildConfig = Parameters<typeof Bun.build>[0];
-
-// Plugin para resolver "slash" para o código fonte TypeScript em desenvolvimento
-const resolveSlashSourcePlugin: BunPlugin = {
-  name: "resolve-slash-source",
-  setup(build) {
-    build.onResolve({ filter: /^slash$/ }, () => {
-      return {
-        path: resolve(import.meta.dir, "../../slash/src/index.ts"),
-      };
-    });
-  },
-};
 
 const ROOT = resolve(import.meta.dir, "..");
 const DIST = resolve(ROOT, "dist");
@@ -39,7 +26,7 @@ const clientConfig = {
   },
   packages: "bundle",
   // Não usar external - bundlar tudo incluindo slash
-  plugins: [resolveSlashSourcePlugin, cssModuleTypesPlugin({ verbose: true })],
+  plugins: [cssModuleTypesPlugin({ verbose: true })],
   define: {
     "process.env.NODE_ENV": JSON.stringify("development"),
     __DEV__: "true",
@@ -55,7 +42,7 @@ const serverConfig = {
   minify: false,
   packages: "bundle",
   // Não usar external - bundlar tudo incluindo slash
-  plugins: [resolveSlashSourcePlugin, cssModuleTypesPlugin({ verbose: false })],
+  plugins: [cssModuleTypesPlugin({ verbose: false })],
   define: {
     "process.env.NODE_ENV": JSON.stringify("development"),
     __DEV__: "true",

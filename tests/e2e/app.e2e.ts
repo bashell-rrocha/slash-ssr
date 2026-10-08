@@ -12,6 +12,8 @@ test.describe("SSR app (hidratação)", () => {
     expect(serverHtml).toContain("task 3");
 
     await page.goto("/");
+    // Os todos já estão no HTML do servidor: só interagir depois que o cliente hidratou
+    await expect(page.locator("html")).toHaveAttribute("data-hydrated", "true");
     const items = page.locator("ul li");
     await expect(items).toHaveCount(3);
     await expect(page.getByText("task 1")).toBeVisible();
@@ -30,11 +32,15 @@ test.describe("SSR app (hidratação)", () => {
 
     // toggle primary
     const toggle = page.getByRole("button", { name: "toggle primary" });
-    const before = await toggle.getAttribute("class");
+    // CSS modules geram nomes com hash (primary_xxx / secondary_xxx)
+    await expect(toggle).toHaveClass(/(^|\s)primary_/);
+    await expect(toggle).not.toHaveClass(/(^|\s)secondary_/);
     await toggle.click();
-    await expect(toggle).not.toHaveAttribute("class", before!);
+    await expect(toggle).toHaveClass(/(^|\s)secondary_/);
+    await expect(toggle).not.toHaveClass(/(^|\s)primary_/);
     await toggle.click();
-    await expect(toggle).toHaveAttribute("class", before!);
+    await expect(toggle).toHaveClass(/(^|\s)primary_/);
+    await expect(toggle).not.toHaveClass(/(^|\s)secondary_/);
 
     // limpar
     await page.getByRole("button", { name: "limpar" }).click();

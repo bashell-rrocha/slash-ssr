@@ -19,4 +19,22 @@ describe("renderStateScript", () => {
 
     expect(JSON.parse(json)).toEqual(state);
   });
+
+  const extrair = (out: string) =>
+    out.replace(/^[\s\S]*?<script[^>]*>/, "").replace(/<\/script>[\s\S]*$/, "");
+
+  test.each([
+    ["<!--", { name: "a<!--b", n: 1 }],
+    ["U+2028/U+2029", { name: "a\u2028b\u2029c", n: 1 }],
+    ["</script", { name: "x</script", n: 1 }],
+  ])("conteúdo inerte e fiel ao original para %s", (_label, state) => {
+    const out = renderStateScript(state);
+    const json = extrair(out);
+
+    expect(json).not.toContain("<!--");
+    expect(json.toLowerCase()).not.toContain("</script");
+    expect(json).not.toContain("\u2028");
+    expect(json).not.toContain("\u2029");
+    expect(JSON.parse(json)).toEqual(state);
+  });
 });

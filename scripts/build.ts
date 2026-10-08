@@ -103,8 +103,18 @@ const cssLinks = clientResult.outputs
   .map((o) => `<link rel="stylesheet" href="/${basename(o.path)}">`)
   .join("");
 let indexHtml = await readFile(resolve(DIST, "index.html"), "utf8");
-indexHtml = indexHtml.replace(/\/client\.js/, () => `/${basename(entryJs.path)}`);
-if (cssLinks) indexHtml = indexHtml.replace("</head>", () => `${cssLinks}\n  </head>`);
+if (!indexHtml.includes("/client.js")) {
+  console.error('[build] ❌ index.html não referencia "/client.js"; não há o que reescrever');
+  process.exit(1);
+}
+indexHtml = indexHtml.replace("/client.js", () => `/${basename(entryJs.path)}`);
+if (cssLinks) {
+  if (!indexHtml.includes("</head>")) {
+    console.error("[build] ❌ index.html não tem </head>; não há onde injetar o CSS");
+    process.exit(1);
+  }
+  indexHtml = indexHtml.replace("</head>", () => `${cssLinks}\n  </head>`);
+}
 await writeFile(resolve(DIST, "index.html"), indexHtml, "utf8");
 
 console.log("[build] ✓ Static files copied to dist/");

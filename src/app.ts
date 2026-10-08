@@ -28,25 +28,38 @@ let nextId = 4;
 
 // Deriva um Reactive de uma parte do estado (o mesmo padrão do Tasks.tsx do slash-spa).
 // Ler `state.get()` direto no template congela o valor na hora da montagem.
-function select<T>(pick: (s: AppState) => T) {
+// Só notifica quando o valor escolhido mudou (comparação por JSON, os dados são simples):
+// digitar no input não reconstrói a lista. `view` transforma o valor escolhido no que é renderizado.
+function select<P, T = P>(pick: (s: AppState) => P, view: (value: P) => T = (v) => v as unknown as T) {
   return {
-    get: () => pick(state.get()),
-    subscribe: (fn: (value: T) => void) => state.watch((s) => fn(pick(s))),
+    get: () => view(pick(state.get())),
+    subscribe: (fn: (value: T) => void) => {
+      let prev = JSON.stringify(pick(state.get()));
+      return state.watch((s) => {
+        const value = pick(s);
+        const key = JSON.stringify(value);
+        if (key === prev) return;
+        prev = key;
+        fn(view(value));
+      });
+    },
   };
 }
 
 const name = select((s) => s.name);
 // A classe do botão deriva de `primary` (evita um watcher que faz state.set dentro da notificação)
 const btnClasses = select((s) => [styles.button, s.primary ? styles.primary : styles.secondary]);
-const todoItems = select((s) =>
-  s.todos.map(
-    (t: Todo) => html`
-      <li class=${styles.todo}>
-        <span>${t.text}</span>
-        <button class=${styles.rm} onClick=${() => remove(t.id)}>x</button>
-      </li>
-    `,
-  ),
+const todoItems = select(
+  (s) => s.todos,
+  (todos) =>
+    todos.map(
+      (t: Todo) => html`
+        <li class=${styles.todo}>
+          <span>${t.text}</span>
+          <button class=${styles.rm} onClick=${() => remove(t.id)}>x</button>
+        </li>
+      `,
+    ),
 );
 
 function add() {

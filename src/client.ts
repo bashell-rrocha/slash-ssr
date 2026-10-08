@@ -24,6 +24,9 @@ if (__DEV__) {
 // Senão, vai renderizar normalmente
 render(() => App(), "#app");
 
+// Sinal determinístico de que a hidratação terminou (usado pelo E2E)
+document.documentElement.dataset.hydrated = "true";
+
 if (__DEV__) {
   console.log("[DEV] App inicializado!");
 }

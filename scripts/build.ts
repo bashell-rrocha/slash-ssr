@@ -1,7 +1,7 @@
 // packages/slash-ssr/scripts/build.ts
 import { cssModuleTypesPlugin } from "../plugins/css-types";
-import { resolve } from "node:path";
-import { cp, rm, mkdir } from "node:fs/promises";
+import { resolve, basename } from "node:path";
+import { cp, rm, mkdir, readFile, writeFile } from "node:fs/promises";
 
 type BuildConfig = Parameters<typeof Bun.build>[0];
 
@@ -91,6 +91,21 @@ console.log(`[build] ✓ Server built in ${elapsedServer}ms (${serverSizeKB}KB t
 // Copiar arquivos estáticos de public/ para dist/
 console.log("[build] Copying static files from public/ to dist/...");
 await cp(PUBLIC, DIST, { recursive: true, force: true });
+
+// O build gera nomes com hash: reescrever o index.html (template do SSR) com os arquivos reais do cliente
+const entryJs = clientResult.outputs.find((o) => o.kind === "entry-point");
+if (!entryJs) {
+  console.error("[build] ❌ Client entry point output not found");
+  process.exit(1);
+}
+const cssLinks = clientResult.outputs
+  .filter((o) => o.path.endsWith(".css"))
+  .map((o) => `<link rel="stylesheet" href="/${basename(o.path)}">`)
+  .join("");
+let indexHtml = await readFile(resolve(DIST, "index.html"), "utf8");
+indexHtml = indexHtml.replace(/\/client\.js/, () => `/${basename(entryJs.path)}`);
+if (cssLinks) indexHtml = indexHtml.replace("</head>", () => `${cssLinks}\n  </head>`);
+await writeFile(resolve(DIST, "index.html"), indexHtml, "utf8");
 
 console.log("[build] ✓ Static files copied to dist/");
 

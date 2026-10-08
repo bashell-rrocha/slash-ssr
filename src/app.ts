@@ -3,7 +3,7 @@ import { html as clientHtml, createState } from "@_bashell/slash/core";
 import { htmlString } from "@_bashell/slash/ssr";
 import styles from "./styles.module.css";
 
-// No servidor usa htmlString (retorna string), no cliente usa html (retorna Nodes)
+// No servidor usa htmlString (retorna SafeHtml; texto interpolado é escapado), no cliente usa html (retorna Nodes)
 const html = typeof document !== "undefined" ? clientHtml : htmlString;
 
 type Todo = { id: number; text: string };

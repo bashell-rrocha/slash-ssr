@@ -1,5 +1,10 @@
-// packages/slash-ssr/playwright.config.ts
+// playwright.config.ts
 import { defineConfig, devices } from "@playwright/test";
+import { parsePort } from "./src/port";
+
+// Porta do servidor de teste: PORT no ambiente, 4000 por padrão (valor inválido é recusado)
+const PORT = parsePort(process.env.PORT);
+const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -11,7 +16,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:4000",
+    baseURL: BASE_URL,
     trace: "on-first-retry",
   },
 
@@ -25,7 +30,8 @@ export default defineConfig({
   webServer: {
     // Fluxo de produção: o build gera nomes com hash e reescreve o index.html
     command: "bun run build && bun run start",
-    url: "http://localhost:4000",
+    url: BASE_URL,
+    env: { PORT: String(PORT) },
     reuseExistingServer: false,
     timeout: 120000,
   },

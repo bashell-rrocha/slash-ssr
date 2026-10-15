@@ -1,4 +1,4 @@
-// apps/playground/plugins/css-types.ts
+// plugins/css-types.ts
 // Bun plugin: gera .d.ts ao lado de cada *.module.css durante o build/rebuild.
 // Corrigido para evitar loop de rebuild: só escreve o .d.ts se o conteúdo mudou.
 

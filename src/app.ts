@@ -1,4 +1,4 @@
-// packages/slash-ssr/src/app.ts
+// src/app.ts
 import { html as clientHtml, createState } from "@_bashell/slash/core";
 import { htmlString } from "@_bashell/slash/ssr";
 import styles from "./styles.module.css";

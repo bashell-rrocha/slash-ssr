@@ -1,4 +1,4 @@
-// packages/slash-ssr/src/state-script.test.ts
+// src/state-script.test.ts
 import { describe, test, expect } from "bun:test";
 import { renderStateScript } from "./state-script";
 

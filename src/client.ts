@@ -1,4 +1,4 @@
-// packages/slash-ssr/src/client.ts
+// src/client.ts
 import { render } from "@_bashell/slash/core";
 import { App } from "./app";
 

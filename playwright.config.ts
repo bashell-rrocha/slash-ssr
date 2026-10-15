@@ -1,8 +1,9 @@
-// packages/slash-ssr/playwright.config.ts
+// playwright.config.ts
 import { defineConfig, devices } from "@playwright/test";
+import { parsePort } from "./src/port";
 
-// Porta do servidor de teste: PORT no ambiente, 4000 por padrão
-const PORT = Number(process.env.PORT) || 4000;
+// Porta do servidor de teste: PORT no ambiente, 4000 por padrão (valor inválido é recusado)
+const PORT = parsePort(process.env.PORT);
 const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({

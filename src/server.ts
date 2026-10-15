@@ -1,12 +1,22 @@
-// packages/slash-ssr/src/server.ts
+// src/server.ts
 import { renderToString } from "@_bashell/slash/ssr";
 import { App } from "./app";
+import { parsePort } from "./port";
 import { renderStateScript } from "./state-script";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const DIST = new URL("../dist/", import.meta.url);
 const PUBLIC_DIR = new URL("../public/", import.meta.url);
+
+// Porta do servidor: PORT no ambiente, 4000 por padrão; valor inválido encerra com erro
+let PORT: number;
+try {
+  PORT = parsePort(process.env.PORT);
+} catch (error) {
+  console.error(`✖ ${(error as Error).message}`);
+  process.exit(1);
+}
 
 // Ler o template HTML
 async function getHtmlTemplate(): Promise<string> {
@@ -58,9 +68,8 @@ async function serveIndex(): Promise<Response> {
   });
 }
 
-Bun.serve({
-  // Porta do servidor: PORT no ambiente, 4000 por padrão
-  port: Number(process.env.PORT) || 4000,
+const server = Bun.serve({
+  port: PORT,
   async fetch(req) {
     const url = new URL(req.url);
 
@@ -91,4 +100,4 @@ Bun.serve({
   },
 });
 
-console.log("▶ http://localhost:4000 (SSR enabled)");
+console.log(`▶ http://localhost:${server.port} (SSR enabled)`);

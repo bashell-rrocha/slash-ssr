@@ -1,7 +1,8 @@
 # Testes do template no GitHub.
 # Gatilhos: todo PR para develop ou main, todo push na main (o merge de uma release ou hotfix)
 # e execução manual (workflow_dispatch). Um job só: testes unitários, checagem de tipos e e2e com Playwright.
-name: Testes
+# Um push novo no mesmo branch cancela a execução anterior; se falhar, o relatório do Playwright fica como artefato.
+name: test
 
 on:
   pull_request:
@@ -9,6 +10,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -34,3 +39,11 @@ jobs:
 
       - name: Testes e2e
         run: bun run test:e2e
+
+      - name: Guardar o relatório do Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

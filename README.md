@@ -6,7 +6,7 @@ Template de aplicação com renderização no servidor (SSR) sobre o [`@_bashell
 bun install
 bun run dev        # desenvolvimento
 bun run build      # build de produção em dist/
-bun run start      # serve o dist/ (PORT, padrão 4000)
+bun run start      # serve o dist/ (PORT: inteiro de 1 a 65535, padrão 4000)
 bun run test       # testes unitários
 bun run typecheck  # checagem de tipos
 bun run test:e2e   # e2e com Playwright (PORT, padrão 4000)

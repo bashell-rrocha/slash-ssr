@@ -1,0 +1,36 @@
+# Testes do template no GitHub.
+# Gatilhos: todo PR para develop ou main, todo push na main (o merge de uma release ou hotfix)
+# e execução manual (workflow_dispatch). Um job só: testes unitários, checagem de tipos e e2e com Playwright.
+name: Testes
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+
+      - name: Instalar dependências
+        run: bun install
+
+      - name: Instalar o Chromium do Playwright
+        run: bunx playwright install --with-deps chromium
+
+      - name: Testes unitários
+        run: bun run test
+
+      - name: Checagem de tipos
+        run: bun run typecheck
+
+      - name: Testes e2e
+        run: bun run test:e2e

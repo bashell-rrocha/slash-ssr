@@ -59,7 +59,8 @@ async function serveIndex(): Promise<Response> {
 }
 
 Bun.serve({
-  port: 4000,
+  // Porta do servidor: PORT no ambiente, 4000 por padrão
+  port: Number(process.env.PORT) || 4000,
   async fetch(req) {
     const url = new URL(req.url);
 

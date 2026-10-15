@@ -1,4 +1,4 @@
-// packages/slash-ssr/scripts/dev.ts
+// scripts/dev.ts
 import { cssModuleTypesPlugin } from "../plugins/css-types";
 import { watch as fsWatch } from "node:fs";
 import { stat, readdir, writeFile, cp, rm, mkdir } from "node:fs/promises";

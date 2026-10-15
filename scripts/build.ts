@@ -1,4 +1,4 @@
-// packages/slash-ssr/scripts/build.ts
+// scripts/build.ts
 import { cssModuleTypesPlugin } from "../plugins/css-types";
 import { resolve, basename } from "node:path";
 import { cp, rm, mkdir, readFile, writeFile } from "node:fs/promises";

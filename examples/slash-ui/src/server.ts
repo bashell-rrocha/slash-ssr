@@ -1,5 +1,3 @@
-import { existsSync, readFileSync, statSync } from "node:fs";
-import { extname, join, normalize } from "node:path";
 import { renderToString } from "@_bashell/slash/ssr";
 import { view } from "@_bashell/slash-ui/core";
 import {
@@ -12,6 +10,9 @@ import {
   type SitePage,
   siteIndex,
 } from "@_bashell/slash-ui/host";
+import { resolveStatic } from "@_bashell/slash-ui/host/node";
+import { readFileSync } from "node:fs";
+import { extname, join } from "node:path";
 import { renderStateScript } from "../../../src/state-script";
 
 // Servidor do site de exemplo do slash-ui no slash-ssr: cada requisição renderiza a página (renderToString) com o
@@ -30,10 +31,16 @@ const TYPES: Record<string, string> = {
   ".css": "text/css; charset=utf-8",
 };
 
+/** O que o site publica do dist/: o tema, o app (manifest, service worker, ícones) e o bundle do cliente. O código do
+ *  servidor (main.js, server.js) e o assets.json ficam de fora. */
+const PUBLIC = (rel: string) => /^(themes|app)\//.test(rel) || /^(client|chunk)-[\w-]+\.(js|css)$/.test(rel);
+
 /** Os nomes do bundle do cliente gravados pelo build (dist/assets.json). */
 export function readAssets(dist: string): Assets {
   return JSON.parse(readFileSync(join(dist, "assets.json"), "utf8")) as Assets;
 }
+
+const NOT_FOUND_TITLE = "Página não encontrada";
 
 const INDEX: SitePage = {
   ...exampleSite()[0],
@@ -67,24 +74,34 @@ ${head}
 export function createHandler(assets: Assets, dist: string): (req: Request) => Response {
   const pages = exampleSite();
   return (req) => {
-    const path = decodeURIComponent(new URL(req.url).pathname);
-    const file = normalize(join(dist, path));
-    if (!file.startsWith(dist)) return new Response("fora do site", { status: 403 });
-    if (extname(path) && existsSync(file) && statSync(file).isFile()) {
-      const type = TYPES[extname(path)];
-      return new Response(Bun.file(file), type ? { headers: { "content-type": type } } : undefined);
+    const path = new URL(req.url).pathname;
+    if (extname(path)) {
+      const found = resolveStatic(dist, path, PUBLIC);
+      if ("file" in found) {
+        const type = TYPES[extname(found.file)];
+        return new Response(Bun.file(found.file), type ? { headers: { "content-type": type } } : undefined);
+      }
+      if (found.status !== 404)
+        return new Response(found.status === 400 ? "endereço inválido" : "fora do site", { status: found.status });
+      return new Response("não encontrado", { status: 404 });
     }
-    const page = path === "/" ? INDEX : findPage(pages, path);
-    const html = (body: string, state: unknown, status = 200) =>
-      new Response(documentFor(page ?? INDEX, body, state, assets), {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(path);
+    } catch {
+      return new Response("endereço inválido", { status: 400 });
+    }
+    const page = decoded === "/" ? INDEX : findPage(pages, decoded);
+    const html = (target: SitePage, body: string, state: unknown, status = 200) =>
+      new Response(documentFor(target, body, state, assets), {
         status,
         headers: { "content-type": "text/html; charset=utf-8" },
       });
     if (!page) {
-      const { html: body, state } = renderToString(() => view`<main><h1>Página não encontrada</h1></main>`);
-      return html(body, state, 404);
+      const { html: body, state } = renderToString(() => view`<main><h1>${NOT_FOUND_TITLE}</h1></main>`);
+      return html({ ...INDEX, title: NOT_FOUND_TITLE }, body, state, 404);
     }
     const { html: body, state } = renderToString(() => (page === INDEX ? siteIndex(pages) : renderPage(page)));
-    return html(body, state);
+    return html(page, body, state);
   };
 }

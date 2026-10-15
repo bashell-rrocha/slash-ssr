@@ -1,7 +1,7 @@
+import { EXAMPLE_APP, exampleSite, serviceWorkerSource, webManifest } from "@_bashell/slash-ui/host";
+import { contentVersion, copyHostAssets, themeColors } from "@_bashell/slash-ui/host/node";
 import { mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { EXAMPLE_APP, exampleSite, serviceWorkerSource, webManifest } from "@_bashell/slash-ui/host";
-import { copyHostAssets, themeColors } from "@_bashell/slash-ui/host/node";
 import { cssModuleTypesPlugin } from "../../plugins/css-types";
 
 // Build do site de exemplo do slash-ui no slash-ssr: cliente (browser) e servidor (bun) no mesmo processo, como o
@@ -57,7 +57,12 @@ writeFileSync(
   join(DIST, "assets.json"),
   JSON.stringify({ js: `/${relative(DIST, entry.path)}`, css, themeColor: colors.theme }, null, 2),
 );
-const manifest = webManifest({ ...EXAMPLE_APP, themeColor: colors.theme, backgroundColor: colors.background, icons: "/app/icons/" });
+const manifest = webManifest({
+  ...EXAMPLE_APP,
+  themeColor: colors.theme,
+  backgroundColor: colors.background,
+  icons: "/app/icons/",
+});
 writeFileSync(join(DIST, "app", "manifest.webmanifest"), JSON.stringify(manifest, null, 2));
 const files = (dir: string): string[] =>
   readdirSync(dir).flatMap((name) => {
@@ -73,5 +78,7 @@ const assets = files(DIST).filter(
     file.startsWith("/app/icons/"),
 );
 const precache = [...pages.filter((p) => p.app).map((p) => p.path), ...assets];
-writeFileSync(join(DIST, "app", "sw.js"), serviceWorkerSource({ precache, scope: EXAMPLE_APP.startUrl }));
+// version: o conteúdo dos arquivos (tema, fontes e ícones mudam sem mudar de nome)
+const version = contentVersion(DIST, assets);
+writeFileSync(join(DIST, "app", "sw.js"), serviceWorkerSource({ precache, scope: EXAMPLE_APP.startUrl, version }));
 console.log(`[ui:build] cliente e servidor em ${relative(process.cwd(), DIST)}/, ${precache.length} no pré-cache`);

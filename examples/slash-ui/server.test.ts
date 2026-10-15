@@ -1,6 +1,6 @@
+import { exampleSite } from "@_bashell/slash-ui/host";
 import { describe, expect, test } from "bun:test";
 import { join } from "node:path";
-import { exampleSite } from "@_bashell/slash-ui/host";
 
 // Hospedeiro de exemplo do slash-ui no slash-ssr: cada requisição renderiza a página no servidor (com o tema no
 // <html> e o estado para a hidratação); os arquivos do build (temas, PWA, ícones, bundle) saem do dist/.
@@ -10,7 +10,9 @@ const ROOT = import.meta.dir;
 describe("ui:build + handler (slash-ssr)", async () => {
   const proc = Bun.spawn(["bun", "run", join(ROOT, "build.ts")], { stdout: "pipe", stderr: "pipe" });
   const [stderr, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
-  const { createHandler, readAssets } = (await import(join(ROOT, "dist", "server.js"))) as typeof import("./src/server");
+  const { createHandler, readAssets } = (await import(
+    join(ROOT, "dist", "server.js")
+  )) as typeof import("./src/server");
   const handle = createHandler(readAssets(join(ROOT, "dist")), join(ROOT, "dist"));
   const get = async (path: string) => {
     const res = await handle(new Request(`http://localhost${path}`));
@@ -31,9 +33,7 @@ describe("ui:build + handler (slash-ssr)", async () => {
     // Assert
     expect(
       results.map((r, i) => [r.status, /<html[^>]*>/.exec(r.body)?.[0], r.body.includes('<div id="app">')]),
-    ).toEqual(
-      pages.map((p) => [200, `<html lang="pt-BR" data-theme="${p.theme}" data-mode="${p.mode}">`, true]),
-    );
+    ).toEqual(pages.map((p) => [200, `<html lang="pt-BR" data-theme="${p.theme}" data-mode="${p.mode}">`, true]));
     expect(results[0]?.body).toContain('<script id="__SLASH_STATE__" type="application/json">');
     expect(results[0]?.body).toMatch(/<script type="module" src="\/client-\w+\.js"><\/script>/);
   });
@@ -74,11 +74,22 @@ describe("ui:build + handler (slash-ssr)", async () => {
     expect(b.body).toContain("Buscar a Bia na natação");
   });
 
-  test("caminho para fora do dist/ é recusado", async () => {
-    // Arrange / Act
-    const res = await get("/../package.json");
+  test("o código do servidor e os arquivos do build não são publicados; fora do dist/ e endereço inválido são recusados", async () => {
+    // Arrange
+    const paths = ["/server.js", "/main.js", "/assets.json", "/..%2fpackage.json", "/%E0%A4%A"];
+
+    // Act
+    const statuses = await Promise.all(paths.map(async (p) => (await get(p)).status));
 
     // Assert
-    expect(res.status).not.toBe(200);
+    expect(statuses).toEqual([404, 404, 404, 403, 400]);
+  });
+
+  test("o 404 tem o próprio título", async () => {
+    // Arrange / Act
+    const res = await get("/nada/");
+
+    // Assert
+    expect(res.body).toContain("<title>Página não encontrada</title>");
   });
 });

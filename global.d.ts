@@ -6,6 +6,10 @@ declare module "*.module.css" {
 // Flag de desenvolvimento definida pelo bundler
 declare const __DEV__: boolean;
 
+// Lado do bundle (true no servidor, false no cliente), definido pelo build do site de exemplo do slash-ui e lido pelo
+// renderer dele (view)
+declare const __SERVER__: boolean;
+
 // JSX declarations for TypeScript without React
 declare namespace JSX {
   type Element = HTMLElement | string | null;

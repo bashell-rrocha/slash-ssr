@@ -7,10 +7,21 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["@types/bun", "bun-types"],
+    "types": [
+      "@types/bun",
+      "bun-types"
+    ],
     "noEmit": true
   },
-  "include": ["src", "plugins", "scripts", "global.d.ts"],
-  "exclude": ["public"]
+  "include": [
+    "src",
+    "plugins",
+    "scripts",
+    "global.d.ts",
+    "examples"
+  ],
+  "exclude": [
+    "public",
+    "examples/*/dist"
+  ]
 }
-

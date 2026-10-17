@@ -13,7 +13,7 @@ declare namespace JSX {
   interface IntrinsicElements extends IntrinsicElementMap {}
 
   interface ElementChildrenAttribute {
-    children: {};
+    children: object;
   }
 
   interface IntrinsicElementMap {
@@ -310,7 +310,7 @@ declare namespace JSX {
     [key: `data-${string}`]: string | number | boolean | null | undefined;
 
     // Children
-    children?: any;
+    children?: unknown;
   }
 
   interface SVGAttributes<T = SVGElement> extends HTMLAttributes<T> {

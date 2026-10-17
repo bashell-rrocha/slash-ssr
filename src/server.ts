@@ -80,7 +80,7 @@ const server = Bun.serve({
 
     // Servir arquivos estáticos de dist/
     try {
-      const fileUrl = new URL("." + url.pathname, DIST);
+      const fileUrl = new URL(`.${url.pathname}`, DIST);
       const file = Bun.file(fileUrl);
       if (await file.exists()) {
         return new Response(file);
@@ -89,7 +89,7 @@ const server = Bun.serve({
 
     // Servir arquivos estáticos de public/ (fallback)
     try {
-      const fileUrl = new URL("." + url.pathname, PUBLIC_DIR);
+      const fileUrl = new URL(`.${url.pathname}`, PUBLIC_DIR);
       const file = Bun.file(fileUrl);
       if (await file.exists()) {
         return new Response(file);

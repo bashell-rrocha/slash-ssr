@@ -36,7 +36,7 @@ export function cssModuleTypesPlugin(
         const classes = extractClassNamesWithNesting(noGlobal);
 
         // 3) gera conteúdo do .d.ts
-        const dtsPath = args.path + ".d.ts";
+        const dtsPath = `${args.path}.d.ts`;
         const content =
 `// ⚠️ gerado automaticamente por slash-css-types (Bun plugin)
 // Fonte: ${args.path}
@@ -52,7 +52,7 @@ export default styles;
         if (prev !== content) {
           await writeFile(dtsPath, content, "utf8");
           if (verbose) {
-            const relRoot = (builder as any)?.config?.root || process.cwd();
+            const relRoot = builder.config?.root || process.cwd();
             const rel = relative(relRoot, dtsPath).split("\\").join("/");
             console.log("✓ css types:", rel);
           }
@@ -202,8 +202,7 @@ function findClassesInSelector(sel: string): string[] {
   // aceita BEM (.block__elem--mod), múltiplas classes (.a.b), etc.
   const re = /(^|[^a-zA-Z0-9_-])\.(-?[_a-zA-Z]+[_a-zA-Z0-9-]*(?:__(?:[_a-zA-Z0-9-]+))*(?:--(?:[_a-zA-Z0-9-]+))*)/g;
   const out: string[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(sel))) {
+  for (const m of sel.matchAll(re)) {
     const name = m[2];
     if (name) out.push(name);
   }

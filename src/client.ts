@@ -10,7 +10,7 @@ if (__DEV__) {
   // Verificar se há estado do servidor
   const stateEl = document.getElementById("__SLASH_STATE__");
   if (stateEl) {
-    console.log("[DEV] Estado inicial do servidor:", JSON.parse(stateEl.textContent!));
+    console.log("[DEV] Estado inicial do servidor:", JSON.parse(stateEl.textContent ?? "null"));
   }
 
   // Verificar se há conteúdo para hidratar

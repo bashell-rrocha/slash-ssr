@@ -1,6 +1,5 @@
 // src/app.test.ts
-import { describe, test, expect, beforeEach } from "bun:test";
-import { createState } from "@_bashell/slash/core";
+import { describe, test, expect } from "bun:test";
 import { renderToString } from "@_bashell/slash/ssr";
 import { App } from "./app";
 

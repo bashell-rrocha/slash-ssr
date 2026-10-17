@@ -58,7 +58,7 @@ await rm(DIST, { recursive: true, force: true });
 await mkdir(DIST, { recursive: true });
 await cp(PUBLIC, DIST, { recursive: true });
 
-let serverProcess: any = null;
+let serverProcess: ReturnType<typeof Bun.spawn> | null = null;
 
 await buildOnce("initial");
 await startServer();
@@ -178,7 +178,7 @@ async function buildOnce(tag: string) {
   return true;
 }
 
-async function writeCssManifestFromOutputs(outputs: any[]) {
+async function writeCssManifestFromOutputs(outputs: { path?: string }[]) {
   const cssFiles = outputs
     .map((o) => String(o?.path || ""))
     .filter((p) => p.endsWith(".css"))

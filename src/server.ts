@@ -1,9 +1,11 @@
 // src/server.ts
 import { renderToString } from "@_bashell/slash/ssr";
 import { App } from "./app";
+import { applyHeaders, loadHeaderRules, matchHeaders } from "./headers";
 import { parsePort } from "./port";
 import { renderStateScript } from "./state-script";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 
 const DIST = new URL("../dist/", import.meta.url);
@@ -68,36 +70,44 @@ async function serveIndex(): Promise<Response> {
   });
 }
 
+// Cabeçalhos de segurança do `_headers` (dist/ no build; public/ em dev); sem o arquivo, nada muda
+const HEADER_RULES = await loadHeaderRules([fileURLToPath(DIST), fileURLToPath(PUBLIC_DIR)]);
+
 const server = Bun.serve({
   port: PORT,
   async fetch(req) {
-    const url = new URL(req.url);
-
-    // Servir a página principal com SSR
-    if (url.pathname === "/" || url.pathname === "/index.html") {
-      return serveIndex();
-    }
-
-    // Servir arquivos estáticos de dist/
-    try {
-      const fileUrl = new URL(`.${url.pathname}`, DIST);
-      const file = Bun.file(fileUrl);
-      if (await file.exists()) {
-        return new Response(file);
-      }
-    } catch {}
-
-    // Servir arquivos estáticos de public/ (fallback)
-    try {
-      const fileUrl = new URL(`.${url.pathname}`, PUBLIC_DIR);
-      const file = Bun.file(fileUrl);
-      if (await file.exists()) {
-        return new Response(file);
-      }
-    } catch {}
-
-    return new Response("Not found", { status: 404 });
+    const response = await handle(req);
+    return applyHeaders(response, matchHeaders(HEADER_RULES, new URL(req.url).pathname));
   },
 });
+
+async function handle(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+
+  // Servir a página principal com SSR
+  if (url.pathname === "/" || url.pathname === "/index.html") {
+    return serveIndex();
+  }
+
+  // Servir arquivos estáticos de dist/
+  try {
+    const fileUrl = new URL(`.${url.pathname}`, DIST);
+    const file = Bun.file(fileUrl);
+    if (await file.exists()) {
+      return new Response(file);
+    }
+  } catch {}
+
+  // Servir arquivos estáticos de public/ (fallback)
+  try {
+    const fileUrl = new URL(`.${url.pathname}`, PUBLIC_DIR);
+    const file = Bun.file(fileUrl);
+    if (await file.exists()) {
+      return new Response(file);
+    }
+  } catch {}
+
+  return new Response("Not found", { status: 404 });
+}
 
 console.log(`▶ http://localhost:${server.port} (SSR enabled)`);

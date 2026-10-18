@@ -49,3 +49,29 @@ test.describe("SSR app (hidratação)", () => {
     expect(pageErrors).toEqual([]);
   });
 });
+
+test.describe("cabeçalhos de segurança (_headers)", () => {
+  test("a página e o 404 saem com CSP, nosniff e Referrer-Policy, e a CSP não quebra a hidratação", async ({ page }) => {
+    // Arrange
+    const violations: string[] = [];
+    page.on("console", (m) => {
+      if (m.text().includes("Content Security Policy")) violations.push(m.text());
+    });
+
+    // Act
+    const pagina = await page.request.get("/");
+    const naoAchou = await page.request.get("/nao-existe");
+    await page.goto("/");
+
+    // Assert
+    expect(naoAchou.status()).toBe(404);
+    for (const res of [pagina, naoAchou]) {
+      expect(res.headers()["content-security-policy"]).toContain("default-src 'self'");
+      expect(res.headers()["content-security-policy"]).not.toContain("unsafe-eval");
+      expect(res.headers()["x-content-type-options"]).toBe("nosniff");
+      expect(res.headers()["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+    }
+    await expect(page.locator("html")).toHaveAttribute("data-hydrated", "true");
+    expect(violations).toEqual([]);
+  });
+});

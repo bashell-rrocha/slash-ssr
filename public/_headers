@@ -1,0 +1,6 @@
+# Cabeçalhos de segurança (sintaxe Cloudflare Pages/Netlify). O servidor do template também os aplica.
+/*
+  Content-Security-Policy: default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY

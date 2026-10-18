@@ -12,6 +12,8 @@ bun run typecheck  # checagem de tipos
 bun run test:e2e   # e2e com Playwright (PORT, padrão 4000)
 ```
 
+**Cabeçalhos de segurança:** `public/_headers` (sintaxe Cloudflare Pages/Netlify: CSP, nosniff, Referrer-Policy, X-Frame-Options) vale na hospedagem estática e também no servidor do template, que o lê na subida e o aplica em toda resposta, 404 inclusive (sem sobrescrever o que a rota já define).
+
 **Testes no GitHub:** todo PR para `develop` ou `main` e todo push na `main` rodam testes, checagem de tipos e e2e (`.github/workflows/test.yml`).
 
 ### `bun.lock`

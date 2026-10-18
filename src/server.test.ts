@@ -56,4 +56,33 @@ describe("src/server.ts", () => {
       proc.kill();
     }
   });
+
+  test("aplica os cabeçalhos do _headers na resposta 404 e nos estáticos", async () => {
+    // Arrange
+    const proc = Bun.spawn([process.execPath, SERVER], {
+      env: { ...process.env, PORT: "4257" },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+
+    try {
+      await lerAte(proc.stdout, "\n");
+
+      // Act
+      const naoAchou = await fetch("http://localhost:4257/nao-existe");
+      const estatico = await fetch("http://localhost:4257/_headers");
+
+      // Assert
+      for (const res of [naoAchou, estatico]) {
+        expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+        expect(res.headers.get("referrer-policy")).toBe("strict-origin-when-cross-origin");
+        expect(res.headers.get("content-security-policy")).toContain("default-src 'self'");
+        expect(res.headers.get("x-frame-options")).toBe("DENY");
+      }
+      expect(naoAchou.status).toBe(404);
+    } finally {
+      proc.kill();
+      await proc.exited;
+    }
+  });
 });

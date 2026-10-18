@@ -2,6 +2,12 @@
 
 Todas as mudanças relevantes deste projeto são registradas aqui, seguindo [Conventional Commits](https://www.conventionalcommits.org/) e [SemVer](https://semver.org/).
 
+## [0.0.6] — 2026-10-18
+
+### Adicionado
+
+- O servidor aplica os cabeçalhos do `public/_headers` (blocos por caminho) em toda resposta, inclusive 404; `_headers` de exemplo com CSP, `nosniff`, `Referrer-Policy` e `X-Frame-Options`.
+
 ## [0.0.5] — 2026-10-17
 
 ### Corrigido
